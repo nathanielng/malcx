@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import datetime
 import hyperopt
 import json
@@ -87,5 +88,8 @@ def evalution_function(params, json_file, exec_path):
 
 
 if __name__ == "__main__":
-    pass
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--exec_path')
+    parser.add_argument('--json_file')
+    args = parser.parse_args()
 
