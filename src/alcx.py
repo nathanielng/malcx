@@ -57,6 +57,26 @@ def dict_to_dataframe(d):
     return pd.DataFrame([data], columns=idx)
 
 
+def get_ranges(input_nodes, n_columns):
+    d = {
+        'distribution samples': [10, 1000],
+        'gradient directions': [0, input_nodes - 1],
+        'data for gradient': [1, 10*input_nodes],
+        'data for intercept': [1, 10],
+        'data in gradient': None,
+        'data in intercept': None,
+        'iteration layers': [1, 2],
+        'extra data filters': [-1, 1],
+        'descriptor columns': 'fixed',
+        'input nodes': [1, n_columns - 1],
+        'fraction divisions tried': [0, 1],
+        'minimum input node correlation': [0, 1],
+        'maximum input node correlation': [0, 1],
+        'model compression': None
+    }
+    return d
+
+
 def run_job(path):
     process = subprocess.Popen(
         [path],
