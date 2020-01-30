@@ -59,19 +59,19 @@ def dict_to_dataframe(d):
 
 def get_ranges(input_nodes, n_columns):
     d = {
-        'distribution samples': [10, 1000],
-        'gradient directions': [0, input_nodes - 1],
-        'data for gradient': [1, 10*input_nodes],
-        'data for intercept': [1, 10],
+        'distribution samples': hyperopt.hp.uniform('distribution', 10, 1000),
+        'gradient directions': hyperopt.hp.uniform('gradient directions', 0, input_nodes - 1),
+        'data for gradient': hyperopt.hp.uniform('data for gradient', 1, 10*input_nodes),
+        'data for intercept': hyperopt.hp.uniform('data for intercept', 1, 10),
         'data in gradient': None,
         'data in intercept': None,
-        'iteration layers': [1, 2],
-        'extra data filters': [-1, 1],
+        'iteration layers': hyperopt.hp.uniform('iteration layers', 1, 2),
+        'extra data filters': hyperopt.hp.uniform('extra data filters', -1, 1),
         'descriptor columns': 'fixed',
-        'input nodes': [1, n_columns - 1],
-        'fraction divisions tried': [0, 1],
-        'minimum input node correlation': [0, 1],
-        'maximum input node correlation': [0, 1],
+        'input nodes': hyperopt.hp.uniform('input nodes', 1, n_columns - 1 ),
+        'fraction divisions tried': hyperopt.hp.uniform('fraction divisions tried', 0, 1),
+        'minimum input node correlation': hyperopt.hp.uniform('minimum input node correlation', 0, 1),
+        'maximum input node correlation': hyperopt.hp.uniform('maximum input node correlation', 0, 1),
         'model compression': None
     }
     return d
