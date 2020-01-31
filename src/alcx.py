@@ -13,6 +13,7 @@ import subprocess
 
 JSON_FILE = os.getenv('JSON_FILE', None)
 EXEC_PATH = os.getenv('EXEC_PATH', None)
+OUTPUTLOG = os.getenv('OUTPUTLOG', None)
 
 
 def load_json(filename):
@@ -102,7 +103,7 @@ def get_coefficient_of_determination(txt):
 
 
 def evaluation_function(params):
-    write_dict(params, JSON_FILE)
+    print_json(params, dest=JSON_FILE)
     stdout, stderr = run_job(EXEC_PATH)
     result = get_coefficient_of_determination(stdout)
     if result is not None:
@@ -122,3 +123,8 @@ if __name__ == "__main__":
     if (JSON_FILE is None) or (EXEC_PATH is None):
         print('The environment variables JSON_FILE and/or EXEC_PATH')
         print('need to be defined.')
+
+    params = load_json(JSON_FILE)
+    print_json(params)
+    result = evaluation_function(params)
+    print(f'Result = {result}')
