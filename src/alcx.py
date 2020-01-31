@@ -105,6 +105,9 @@ def get_coefficient_of_determination(txt):
 def evaluation_function(params):
     print_json(params, dest=JSON_FILE)
     stdout, stderr = run_job(EXEC_PATH)
+    if OUTPUTLOG is not None:
+        with open(OUTPUTLOG, 'w') as f:
+            f.write(stdout)
     result = get_coefficient_of_determination(stdout)
     if result is not None:
         return result['coeff']
@@ -128,3 +131,4 @@ if __name__ == "__main__":
     print_json(params)
     result = evaluation_function(params)
     print(f'Result = {result}')
+
