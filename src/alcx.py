@@ -11,6 +11,10 @@ import re
 import subprocess
 
 
+JSON_FILE = os.getenv('JSON_FILE', None)
+EXEC_PATH = os.getenv('EXEC_PATH', None)
+
+
 def load_json(filename):
     """
     Loads a json file
@@ -57,23 +61,23 @@ def dict_to_dataframe(d):
     return pd.DataFrame([data], columns=idx)
 
 
-def get_ranges(input_nodes, n_columns):
+def get_search_space(input_nodes, n_columns):
     d = {
         'distribution samples': hyperopt.hp.uniform('distribution', 10, 1000),
         'gradient directions': hyperopt.hp.uniform('gradient directions', 0, input_nodes - 1),
         'data for gradient': hyperopt.hp.uniform('data for gradient', 1, 10*input_nodes),
         'data for intercept': hyperopt.hp.uniform('data for intercept', 1, 10),
-        'data in gradient': None,
-        'data in intercept': None,
         'iteration layers': hyperopt.hp.uniform('iteration layers', 1, 2),
         'extra data filters': hyperopt.hp.uniform('extra data filters', -1, 1),
-        'descriptor columns': 'fixed',
         'input nodes': hyperopt.hp.uniform('input nodes', 1, n_columns - 1 ),
         'fraction divisions tried': hyperopt.hp.uniform('fraction divisions tried', 0, 1),
         'minimum input node correlation': hyperopt.hp.uniform('minimum input node correlation', 0, 1),
         'maximum input node correlation': hyperopt.hp.uniform('maximum input node correlation', 0, 1),
-        'model compression': None
     }
+    # 'data in gradient': None,
+    # 'data in intercept': None,
+    # 'descriptor columns': 'fixed',
+    # 'model compression': None
     return d
 
 
@@ -97,9 +101,9 @@ def get_coefficient_of_determination(txt):
         }
 
 
-def evalution_function(params, json_file, exec_path):
-    write_dict(params, json_file)
-    stdout, stderr = run_job(exec_path)
+def evaluation_function(params):
+    write_dict(params, JSON_FILE)
+    stdout, stderr = run_job(EXEC_PATH)
     result = get_coefficient_of_determination(stdout)
     if result is not None:
         return result['coeff']
@@ -109,7 +113,12 @@ def evalution_function(params, json_file, exec_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exec_path')
-    parser.add_argument('--json_file')
+    parser.add_argument('--exec_path', default=None)
+    parser.add_argument('--json_file', default=None)
     args = parser.parse_args()
+    JSON_FILE = args.json_file
+    EXEC_PATH = args.exec_path
 
+    if (JSON_FILE is None) or (EXEC_PATH is None):
+        print('The environment variables JSON_FILE and/or EXEC_PATH')
+        print('need to be defined.')
