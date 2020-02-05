@@ -6,8 +6,8 @@
 # https://learn-the-web.algonquindesign.ca/topics/markdown-yaml-cheat-sheet/#yaml
 # https://learnxinyminutes.com/docs/yaml/
 
-title: Algorithms and Machine Learning
-description: This is a blog specializing in algorithms and machine learning ❤
+title: Machine Learning and Hyperparameter Optimization Tool
+description: This is a machine learning and hyperparameter optimization tool
 github_username: nathanielng
 
 # Email and twitter are optional:
@@ -35,3 +35,4 @@ kramdown:
   auto_ids: true
   hard_wrap: false
   syntax_highlighter: rouge
+
