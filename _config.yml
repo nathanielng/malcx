@@ -18,7 +18,7 @@ twitter_username: nathanielng
 use_math: true
 
 # Everything below here can be ignored, unless you want to change the theme entirely
-theme: minima
+theme: modernist
 plugins:
   - jekyll-feed
 
