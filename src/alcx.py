@@ -152,12 +152,15 @@ def evaluation_function(params):
     if result is not None:
         print(f"Result: {result}")
         value = -result['coeff']
+        uncertainty = result['uncertainty']
     else:
         print(f"Result: {result}")
         value = 0.0
+        uncertainty = 0.0
 
-    params2['coefficient of determination'] = -value
     param_df = dict_to_dataframe(params2)
+    param_df['coefficient of determination'] = -value
+    param_df['uncertainty'] = uncertainty
     PARAMETER_HISTORY_FILE = 'parameter_history.csv'
     if os.path.isfile(PARAMETER_HISTORY_FILE):
         param_df.to_csv(PARAMETER_HISTORY_FILE, mode='a', header=False)
