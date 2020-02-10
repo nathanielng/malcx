@@ -18,6 +18,7 @@ ALCX_EXECUTABLE = os.getenv('ALCX_EXECUTABLE', None)
 ALCX_JSONFILE = None
 ALCX_OUTPUTLOG = None
 PARAMS0 = {}
+ITERATION = 1
 
 
 # ----- Subroutines -----
@@ -136,7 +137,10 @@ def evaluation_function(params):
         'minimum input node correlation': params['minimum input node correlation'],
         'maximum input node correlation': params['maximum input node correlation']
     }
+    print(f'---------- Iteration: {ITERATION} ----------')
+    ITERATION += 1
     print_json(params2, dest=ALCX_JSONFILE)
+    print_json(params2, dest='stdout')
     stdout, stderr = run_job(ALCX_EXECUTABLE)
     if ALCX_OUTPUTLOG is not None:
         with open(ALCX_OUTPUTLOG, 'w') as f:
@@ -199,6 +203,7 @@ if __name__ == "__main__":
 
     # ----- Load JSON File -----
     PARAMS0 = load_json(ALCX_JSONFILE_ORIGINAL)
+    print(f'---------- Starting JSON File ----------')
     print_json(PARAMS0)
 
     # ----- Define Parameter Space -----
