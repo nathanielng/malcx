@@ -16,6 +16,7 @@ ALCX_RUN_FOLDER = os.getenv('ALCX_RUN_FOLDER', None)
 ALCX_EXECUTABLE = os.getenv('ALCX_EXECUTABLE', None)
 ALCX_JSONFILE = None
 ALCX_OUTPUTLOG = None
+PARAMS0 = {}
 
 
 # ----- Subroutines -----
@@ -116,17 +117,50 @@ def get_coefficient_of_determination(txt):
 
 
 def evaluation_function(params):
-    print_json(params, dest=ALCX_JSONFILE)
+    params2 = {**PARAMS0, **params}  # Overwrite PARAMS0 with params
+    print_json(params2, dest=ALCX_JSONFILE)
     stdout, stderr = run_job(ALCX_EXECUTABLE)
     if ALCX_OUTPUTLOG is not None:
         with open(ALCX_OUTPUTLOG, 'w') as f:
             f.write(stdout)
     result = get_coefficient_of_determination(stdout)
     if result is not None:
-        return result['coeff']
+        print(f"Result: {result}")
+        return -result['coeff']
     else:
         print(f"Result: {result}")
-        return None
+        return 0.0
+
+
+def trials2df(result, trials):
+    x = pd.Series(trials.idxs_vals[1]['x'])
+    loss = pd.Series([x['loss'] for x in trials.results])
+    df = pd.DataFrame({
+        'x': x,
+        'loss': loss
+        }, index = trials.idxs_vals[0]['x'])
+    return df
+
+
+def hyperopt_optimize(opt_function, space,
+                      algo=hyperopt.tpe.suggest):
+    """
+    Finds minimum of `opt_function` in `space`.
+    Algorithm defaults to TPE (Tree of Parzen Estimators)
+    """
+    trials = hyperopt.Trials()
+    result = hyperopt.fmin(
+        fn=opt_function,
+        space=space,
+        algo=algo,
+        trials=trials,
+        max_evals=100,
+        rstate=np.random.RandomState(100)
+    )
+    return {
+        'result': result,
+        'trials': trials
+    }
 
 
 if __name__ == "__main__":
@@ -141,15 +175,36 @@ if __name__ == "__main__":
         print('The environment variables ALCX_RUN_FOLDER and ALCX_EXECUTABLE')
         print('need to be defined.')
 
-    ALCX_JSONFILE = os.path.join(ALCX_RUN_FOLDER, 'input.json')
     ALCX_OUTPUTLOG = os.path.join(ALCX_RUN_FOLDER, 'alcx.out')
-    params = load_json(ALCX_JSONFILE)
-    print_json(params)
+    ALCX_JSONFILE = os.path.join(ALCX_RUN_FOLDER, 'input.json')
+    ALCX_JSONFILE_ORIGINAL = os.path.join(ALCX_RUN_FOLDER, 'input_original.json')
 
+    # ----- Load JSON File -----
+    PARAMS0 = load_json(ALCX_JSONFILE_ORIGINAL)
+    print_json(PARAMS0)
+
+    # ----- Define Parameter Space -----
+    input_nodes = PARAMS0['training']['input nodes']
+    descriptor_columns = PARAMS0['training']['descriptor columns']
+    space = get_search_space(input_nodes=input_nodes, n_columns=descriptor_columns)
+
+    # ----- Optimize -----
     try:
         os.chdir(ALCX_RUN_FOLDER)
-        result = evaluation_function(params)
-        print(f'Result: {result}')
+        # result = evaluation_function(params)
+        # print(f'Result: {result}')
+
+        result = hyperopt_optimize(evaluation_function, space)
+        print(f"Result = {result['result']}")
+
     except Exception as e:
         print(f"Unable to change folder to {ALCX_RUN_FOLDER}")
         print(f"Exception: {e}")
+        quit()
+
+    # ----- Save results -----
+    df = trials2df(result['result'], result['trials'])
+    df.to_csv('results.csv')
+    idxmin = df['loss'].idxmin()
+    print(f"Best x: {df.loc[idxmin, 'x']}")
+    print(f"with loss = {df['loss'].min()} (at iteration # {idxmin})")
