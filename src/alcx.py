@@ -140,6 +140,9 @@ def evaluation_function(params):
     print(f'---------- Iteration: {evaluation_function.ITERATION} ----------')
     print_json(params2, dest=ALCX_JSONFILE)
     print_json(params2, dest='stdout')
+    param_df = dict_to_dataframe(params2)
+    param_df.to_csv('parameter_history.csv', append=True)
+
     stdout, stderr = run_job(ALCX_EXECUTABLE)
     if ALCX_OUTPUTLOG is not None:
         with open(ALCX_OUTPUTLOG, 'w') as f:
