@@ -18,7 +18,6 @@ ALCX_EXECUTABLE = os.getenv('ALCX_EXECUTABLE', None)
 ALCX_JSONFILE = None
 ALCX_OUTPUTLOG = None
 PARAMS0 = {}
-ITERATION = 1
 
 
 # ----- Subroutines -----
@@ -137,8 +136,8 @@ def evaluation_function(params):
         'minimum input node correlation': params['minimum input node correlation'],
         'maximum input node correlation': params['maximum input node correlation']
     }
-    print(f'---------- Iteration: {ITERATION} ----------')
-    ITERATION = ITERATION + 1
+    evaluation_function.ITERATION += 1
+    print(f'---------- Iteration: {evaluation_function.ITERATION} ----------')
     print_json(params2, dest=ALCX_JSONFILE)
     print_json(params2, dest='stdout')
     stdout, stderr = run_job(ALCX_EXECUTABLE)
@@ -184,6 +183,8 @@ def hyperopt_optimize(opt_function, space,
         'trials': trials
     }
 
+
+evaluation_function.ITERATION = 0
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
