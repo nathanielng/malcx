@@ -141,7 +141,12 @@ def evaluation_function(params):
     print_json(params2, dest=ALCX_JSONFILE)
     print_json(params2, dest='stdout')
     param_df = dict_to_dataframe(params2)
-    param_df.to_csv('parameter_history.csv', append=True)
+
+    PARAMETER_HISTORY_FILE = 'parameter_history.csv'
+    if os.path.isfile(PARAMETER_HISTORY_FILE):
+        param_df.to_csv(PARAMETER_HISTORY_FILE, mode='a', header=False)
+    else:
+        param_df.to_csv(PARAMETER_HISTORY_FILE)
 
     stdout, stderr = run_job(ALCX_EXECUTABLE)
     if ALCX_OUTPUTLOG is not None:
