@@ -138,7 +138,7 @@ def evaluation_function(params):
         'maximum input node correlation': params['maximum input node correlation']
     }
     print(f'---------- Iteration: {ITERATION} ----------')
-    ITERATION += 1
+    ITERATION = ITERATION + 1
     print_json(params2, dest=ALCX_JSONFILE)
     print_json(params2, dest='stdout')
     stdout, stderr = run_job(ALCX_EXECUTABLE)
