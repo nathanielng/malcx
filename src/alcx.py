@@ -118,7 +118,24 @@ def get_coefficient_of_determination(txt):
 
 
 def evaluation_function(params):
-    params2 = {**PARAMS0, **params}  # Overwrite PARAMS0 with params
+    # Overwrite PARAMS0 with params
+    params2 = PARAMS0
+    params2['network'] = {
+        **PARAMS0['network'],
+        'distribution samples': int(params['distribution samples']),
+        'gradient directions': int(params['gradient directions']),
+        'data for gradient': int(params['data for gradient']),
+        'data for intercept': int(params['data for intercept']),
+        'iteration layers': int(params['iteration layers']),
+        'extra data filters': int(params['extra data filters'])
+    }
+    params2['training'] = {
+        **PARAMS0['training'],
+        'input nodes': int(params['input nodes']),
+        'fraction divisions tried': params['fraction divisions tried'],
+        'minimum input node correlation': params['minimum input node correlation'],
+        'maximum input node correlation': params['maximum input node correlation']
+    }
     print_json(params2, dest=ALCX_JSONFILE)
     stdout, stderr = run_job(ALCX_EXECUTABLE)
     if ALCX_OUTPUTLOG is not None:
