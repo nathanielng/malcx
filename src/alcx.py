@@ -11,11 +11,14 @@ import re
 import subprocess
 
 
-JSON_FILE = os.getenv('JSON_FILE', None)
-EXEC_PATH = os.getenv('EXEC_PATH', None)
-OUTPUTLOG = os.getenv('OUTPUTLOG', None)
+# ----- Set Parameters -----
+ALCX_RUN_FOLDER = os.getenv('ALCX_RUN_FOLDER', None)
+ALCX_EXECUTABLE = os.getenv('ALCX_EXECUTABLE', None)
+ALCX_JSONFILE = None
+ALCX_OUTPUTLOG = None
 
 
+# ----- Subroutines -----
 def load_json(filename):
     """
     Loads a json file
@@ -63,6 +66,16 @@ def dict_to_dataframe(d):
 
 
 def get_search_space(input_nodes, n_columns):
+    """
+    Returns the search space in a dictionary of hyperopt distributions
+
+    Parameters that do not require a search space:
+     - 'data in gradient': None
+     - 'data in intercept': None
+     - 'descriptor columns': (fixed)
+     - 'model compression': None
+
+    """
     d = {
         'distribution samples': hyperopt.hp.uniform('distribution', 10, 1000),
         'gradient directions': hyperopt.hp.uniform('gradient directions', 0, input_nodes - 1),
@@ -75,10 +88,6 @@ def get_search_space(input_nodes, n_columns):
         'minimum input node correlation': hyperopt.hp.uniform('minimum input node correlation', 0, 1),
         'maximum input node correlation': hyperopt.hp.uniform('maximum input node correlation', 0, 1),
     }
-    # 'data in gradient': None,
-    # 'data in intercept': None,
-    # 'descriptor columns': 'fixed',
-    # 'model compression': None
     return d
 
 
@@ -94,6 +103,10 @@ def run_job(path):
 def get_coefficient_of_determination(txt):
     m = re.search(r'Coefficient of determination\s*([0-9.]+)\s*±\s*([0-9.]+)', txt)
     if m is None:
+        print("----- Could not find coefficient of determination -----")
+        print("**Output**:")
+        print(txt)
+        print("-------------------------------------------------------")
         return None
     else:
         return {
@@ -103,32 +116,40 @@ def get_coefficient_of_determination(txt):
 
 
 def evaluation_function(params):
-    print_json(params, dest=JSON_FILE)
-    stdout, stderr = run_job(EXEC_PATH)
-    if OUTPUTLOG is not None:
-        with open(OUTPUTLOG, 'w') as f:
+    print_json(params, dest=ALCX_JSONFILE)
+    stdout, stderr = run_job(ALCX_EXECUTABLE)
+    if ALCX_OUTPUTLOG is not None:
+        with open(ALCX_OUTPUTLOG, 'w') as f:
             f.write(stdout)
     result = get_coefficient_of_determination(stdout)
     if result is not None:
         return result['coeff']
     else:
+        print(f"Result: {result}")
         return None
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exec_path', default=None)
-    parser.add_argument('--json_file', default=None)
+    parser.add_argument('--exec_path', default=ALCX_EXECUTABLE)
+    parser.add_argument('--run_folder', default=ALCX_RUN_FOLDER)
     args = parser.parse_args()
-    JSON_FILE = args.json_file
-    EXEC_PATH = args.exec_path
+    ALCX_EXECUTABLE = args.exec_path
+    ALCX_RUN_FOLDER = args.run_folder
 
-    if (JSON_FILE is None) or (EXEC_PATH is None):
-        print('The environment variables JSON_FILE and/or EXEC_PATH')
+    if (ALCX_RUN_FOLDER is None) or (ALCX_EXECUTABLE is None):
+        print('The environment variables ALCX_RUN_FOLDER and ALCX_EXECUTABLE')
         print('need to be defined.')
 
-    params = load_json(JSON_FILE)
+    ALCX_JSONFILE = os.path.join(ALCX_RUN_FOLDER, 'input.json')
+    ALCX_OUTPUTLOG = os.path.join(ALCX_RUN_FOLDER, 'alcx.out')
+    params = load_json(ALCX_JSONFILE)
     print_json(params)
-    result = evaluation_function(params)
-    print(f'Result = {result}')
 
+    try:
+        os.chdir(ALCX_RUN_FOLDER)
+        result = evaluation_function(params)
+        print(f'Result: {result}')
+    except Exception as e:
+        print(f"Unable to change folder to {ALCX_RUN_FOLDER}")
+        print(f"Exception: {e}")
