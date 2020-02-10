@@ -103,7 +103,7 @@ def run_job(path):
 
 
 def get_coefficient_of_determination(txt):
-    m = re.search(r'Coefficient of determination\s*([0-9.]+)\s*±\s*([0-9.]+)', txt)
+    m = re.search(r'Coefficient of determination\s*(-?[0-9.]+)\s*±\s*([0-9.]+)', txt)
     if m is None:
         print("----- Could not find coefficient of determination -----")
         print("**Output**:")
@@ -119,11 +119,14 @@ def get_coefficient_of_determination(txt):
 
 def evaluation_function(params):
     # Overwrite PARAMS0 with params
+    input_nodes = int(params['input nodes'])
+    gradient_directions = int(params['gradient directions'])
+    gradient_directions = min(gradient_directions, input_nodes-1)
     params2 = PARAMS0
     params2['network'] = {
         **PARAMS0['network'],
         'distribution samples': int(params['distribution samples']),
-        'gradient directions': int(params['gradient directions']),
+        'gradient directions': gradient_directions,
         'data for gradient': int(params['data for gradient']),
         'data for intercept': int(params['data for intercept']),
         'iteration layers': int(params['iteration layers']),
@@ -131,7 +134,7 @@ def evaluation_function(params):
     }
     params2['training'] = {
         **PARAMS0['training'],
-        'input nodes': int(params['input nodes']),
+        'input nodes': input_nodes,
         'fraction divisions tried': params['fraction divisions tried'],
         'minimum input node correlation': params['minimum input node correlation'],
         'maximum input node correlation': params['maximum input node correlation']
@@ -140,13 +143,6 @@ def evaluation_function(params):
     print(f'---------- Iteration: {evaluation_function.ITERATION} ----------')
     print_json(params2, dest=ALCX_JSONFILE)
     print_json(params2, dest='stdout')
-    param_df = dict_to_dataframe(params2)
-
-    PARAMETER_HISTORY_FILE = 'parameter_history.csv'
-    if os.path.isfile(PARAMETER_HISTORY_FILE):
-        param_df.to_csv(PARAMETER_HISTORY_FILE, mode='a', header=False)
-    else:
-        param_df.to_csv(PARAMETER_HISTORY_FILE)
 
     stdout, stderr = run_job(ALCX_EXECUTABLE)
     if ALCX_OUTPUTLOG is not None:
@@ -155,11 +151,20 @@ def evaluation_function(params):
     result = get_coefficient_of_determination(stdout)
     if result is not None:
         print(f"Result: {result}")
-        return -result['coeff']
+        value = -result['coeff']
     else:
         print(f"Result: {result}")
-        return 0.0
+        value = 0.0
 
+    params2['coefficient of determination'] = -value
+    param_df = dict_to_dataframe(params2)
+    PARAMETER_HISTORY_FILE = 'parameter_history.csv'
+    if os.path.isfile(PARAMETER_HISTORY_FILE):
+        param_df.to_csv(PARAMETER_HISTORY_FILE, mode='a', header=False)
+    else:
+        param_df.to_csv(PARAMETER_HISTORY_FILE)
+
+    return value
 
 def trials2df(result, trials):
     x = pd.Series(trials.idxs_vals[1]['x'])
