@@ -300,6 +300,10 @@ if __name__ == "__main__":
     save_data(result, trials)
     df = trials2df(result['result'], result['trials'])
     df.to_csv('results.csv')
-    idxmin = df['loss'].idxmin()
-    print(f"Best x: {df.loc[idxmin, 'x']}")
-    print(f"with loss = {df['loss'].min()} (at iteration # {idxmin})")
+
+    # ----- Best coefficient of determination -----
+    df.reset_index(drop=True)
+    best_coeff = df['coefficient of determination'].min()
+    idxmin = df['coefficient of determination'].idxmin()
+    print(f"Best coefficient of determination = {best_coeff} (at idx={idxmin})")
+    print(f"Best set of parameters: {df.loc[idxmin, :]}")
