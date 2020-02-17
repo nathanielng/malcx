@@ -21,7 +21,8 @@ ALCX_OUTPUTLOG = None
 DATETIME_STAMP = datetime.datetime.now().strftime('%Y%m%d-%H%Mh')
 RESULT_FILE = os.path.join(ALCX_RUN_FOLDER, f'result-{DATETIME_STAMP}.pkl')
 TRIAL_FILE = os.path.join(ALCX_RUN_FOLDER, f'trials-{DATETIME_STAMP}.pkl')
-PARAMETER_HISTORY_FILE = 'parameter_history.csv'
+RESULTS_CSV_FILE = os.path.join(ALCX_RUN_FOLDER, f'result-{DATETIME_STAMP}.csv')
+PARAMETER_HISTORY_FILE = 'parameter_history_{DATETIME_STAMP}.csv'
 PARAMS0 = {}
 
 
@@ -165,8 +166,8 @@ def evaluation_function(params):
         uncertainty = 0.0
 
     param_df = dict_to_dataframe(params2)
-    param_df['coefficient of determination'] = -value
-    param_df['uncertainty'] = uncertainty
+    param_df[('results', 'coefficient of determination')] = -value
+    param_df[('results', 'uncertainty')] = uncertainty
     if os.path.isfile(PARAMETER_HISTORY_FILE):
         param_df.to_csv(PARAMETER_HISTORY_FILE, mode='a', header=False)
     else:
@@ -194,7 +195,7 @@ def trials2df(result, trials):
         print('----- trials.results -----')
         print(trials.results)
 
-    return pd.concat((row1, row2), axis=1)
+    return pd.concat((row1, row2), axis=1).reset_index(drop=True)
 
 
 def hyperopt_optimize(opt_function, space, algo,
@@ -279,8 +280,13 @@ if __name__ == "__main__":
     algo = args.algorithm.lower()
     if algo == 'tpe':
         algo = hyperopt.tpe.suggest
+        PARAMETER_HISTORY_FILE = 'parameter_history__tpe_{DATETIME_STAMP}.csv'
     elif algo[:4] == 'rand':
         algo = hyperopt.rand.suggest
+        PARAMETER_HISTORY_FILE = 'parameter_history_rand_{DATETIME_STAMP}.csv'
+    else:
+        print(f'Unknown algorithm: {algo}')
+        quit()
 
     # ----- Optimize -----
     try:
@@ -299,7 +305,7 @@ if __name__ == "__main__":
     print(f"Result = {result['result']}")
     save_data(result, trials)
     df = trials2df(result['result'], result['trials'])
-    df.to_csv('results.csv')
+    df.to_csv(RESULTS_CSV_FILE)
 
     # ----- Best coefficient of determination -----
     df.reset_index(drop=True)
