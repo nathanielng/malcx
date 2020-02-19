@@ -356,7 +356,7 @@ if __name__ == "__main__":
         run_single()
     else:
         run_optimize(
-            algo=args.algorithm.lower(),
+            algorithm=args.algorithm.lower(),
             evaluations=args.evaluations,
             random_state=int(args.random_state)
         )
