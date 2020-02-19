@@ -12,18 +12,15 @@ import re
 import subprocess
 
 
-# ----- Set Parameters -----
-ALCX_RUN_FOLDER = os.getenv('ALCX_RUN_FOLDER', None)
+# ----- Setup Parameters -----
 ALCX_EXECUTABLE = os.getenv('ALCX_EXECUTABLE', None)
-ALCX_JSONFILE = None
-ALCX_OUTPUTLOG = None
+ALCX_RUN_FOLDER = os.getenv('ALCX_RUN_FOLDER', None)
 
 DATETIME_STAMP = datetime.datetime.now().strftime('%Y%m%d-%H%Mh')
 RESULT_FILE = os.path.join(ALCX_RUN_FOLDER, f'result-{DATETIME_STAMP}.pkl')
 TRIAL_FILE = os.path.join(ALCX_RUN_FOLDER, f'trials-{DATETIME_STAMP}.pkl')
 RESULTS_CSV_FILE = os.path.join(ALCX_RUN_FOLDER, f'result-{DATETIME_STAMP}.csv')
 PARAMETER_HISTORY_FILE = 'parameter_history_{DATETIME_STAMP}.csv'
-PARAMS0 = {}
 
 
 # ----- Subroutines -----
@@ -145,16 +142,21 @@ def evaluation_function(params):
         'minimum input node correlation': params['minimum input node correlation'],
         'maximum input node intercorrelation': params['maximum input node intercorrelation']
     }
+
+    # Write parameters to a JSON file
     evaluation_function.ITERATION += 1
     print(f'---------- Iteration: {evaluation_function.ITERATION} ----------')
     print_json(params2, dest=ALCX_JSONFILE)
     print_json(params2, dest='stdout')
 
+    # Run alcx
     stdout, stderr = run_job(ALCX_EXECUTABLE)
     if ALCX_OUTPUTLOG is not None:
         with open(ALCX_OUTPUTLOG, 'a') as f:
             f.write((f'---------- Iteration: {evaluation_function.ITERATION} ----------'))
             f.write(stdout)
+
+    # Parse the results from alcx
     result = get_coefficient_of_determination(stdout)
     if result is not None:
         print(f"Result: {result}")
@@ -238,6 +240,82 @@ def save_data(result, trials):
         pickle.dump(trials, f)
 
 
+def change_directory(folder):
+    try:
+        os.chdir(folder)
+    except Exception as e:
+        print(f"Unable to change folder to {folder}")
+        print(f"Exception: {e}")
+        quit()
+
+
+def run_single():
+    change_directory(ALCX_RUN_FOLDER)
+
+    params = PARAMS0.copy()
+    print(f'---------- Flattened Parameters ----------')
+    params2 = {**params['network'], **params['training']}
+    print_json(params2)
+
+    print(f'----- Running {ALCX_EXECUTABLE} -----')
+    value = evaluation_function(params2)
+    print(f'----- Output -----')
+    with open(ALCX_OUTPUTLOG) as f:
+        output_txt = f.read()
+    print(output_txt)
+    result = get_coefficient_of_determination(output_txt)
+    print(f"----- Coefficient of determination = {-value}, Uncertainty = {result['uncertainty']} -----")
+    return result
+
+
+def run_optimize(algorithm: str, evaluations: int, random_state: int):
+    """
+    Runs optimization routine where algo is specified
+    """
+
+    print(f'---------- Starting JSON File ----------')
+    print_json(PARAMS0)
+
+    # ----- Define algorithm -----
+    if algorithm == 'tpe':
+        algo = hyperopt.tpe.suggest
+        PARAMETER_HISTORY_FILE = 'parameter_history_tpe_{DATETIME_STAMP}.csv'
+    elif algorithm[:4] == 'rand':
+        algo = hyperopt.rand.suggest
+        PARAMETER_HISTORY_FILE = 'parameter_history_rand_{DATETIME_STAMP}.csv'
+    else:
+        print(f'Unknown algorithm: {algo}')
+        quit()
+
+    change_directory(ALCX_RUN_FOLDER)
+
+    # ----- Optimize -----
+    try:
+        # result = evaluation_function(params)
+        # print(f'Result: {result}')
+        result = hyperopt_optimize(
+            evaluation_function, PARAMETER_SEARCH_SPACE,
+            algo, evaluations, random_state)
+    except Exception as e:
+        print('Problem encountered during hyperopt_optimize()')
+        print(f"Exception: {e}")
+        quit()
+
+    # ----- Save results -----
+    print('----- Hyperopt Optimization Completed -----')
+    print(f"Result = {result['result']}")
+    save_data(result['result'], result['trials'])
+    df = trials2df(result['result'], result['trials'])
+    df.to_csv(RESULTS_CSV_FILE)
+
+    # ----- Best coefficient of determination -----
+    df.reset_index(drop=True)
+    best_coeff = df['coefficient of determination'].min()
+    idxmin = df['coefficient of determination'].idxmin()
+    print(f"Best coefficient of determination = {best_coeff} (at idx={idxmin})")
+    print(f"Best set of parameters: {df.loc[idxmin, :]}")
+
+
 evaluation_function.ITERATION = 0
 
 if __name__ == "__main__":
@@ -248,68 +326,37 @@ if __name__ == "__main__":
     parser.add_argument('--random_state', default=12345, type=int)
     parser.add_argument('--evaluations', default=100, type=int)
     args = parser.parse_args()
-    ALCX_EXECUTABLE = args.exec_path
+
+    # ----- Specify run folder & executable -----
     ALCX_RUN_FOLDER = args.run_folder
+    ALCX_EXECUTABLE = args.exec_path
 
     if (ALCX_RUN_FOLDER is None) or (ALCX_EXECUTABLE is None):
         print('The environment variables ALCX_RUN_FOLDER and ALCX_EXECUTABLE')
         print('need to be defined.')
+        quit()
 
+    # ----- Specify output / logging file -----
     ALCX_OUTPUTLOG = os.path.join(ALCX_RUN_FOLDER, f'alcx-{DATETIME_STAMP}.out')
+
+    # ----- Specify input file -----
     ALCX_JSONFILE = os.path.join(ALCX_RUN_FOLDER, 'input.json')
     ALCX_JSONFILE_ORIGINAL = os.path.join(ALCX_RUN_FOLDER, 'input_original.json')
 
     # ----- Load JSON File -----
     PARAMS0 = load_json(ALCX_JSONFILE_ORIGINAL)
-    print(f'---------- Starting JSON File ----------')
-    print_json(PARAMS0)
 
-    # ----- Define Parameter Space -----
+    # ----- Specify Parameter Search Space -----
     input_nodes = PARAMS0['training']['input nodes']
     descriptor_columns = PARAMS0['training']['descriptor columns']
-    space = get_search_space(input_nodes=input_nodes, n_columns=descriptor_columns)
+    PARAMETER_SEARCH_SPACE = get_search_space(input_nodes=input_nodes, n_columns=descriptor_columns)
 
-    # ----- Preparation -----
-    try:
-        os.chdir(ALCX_RUN_FOLDER)
-    except Exception as e:
-        print(f"Unable to change folder to {ALCX_RUN_FOLDER}")
-        print(f"Exception: {e}")
-        quit()
-
-    algo = args.algorithm.lower()
-    if algo == 'tpe':
-        algo = hyperopt.tpe.suggest
-        PARAMETER_HISTORY_FILE = 'parameter_history__tpe_{DATETIME_STAMP}.csv'
-    elif algo[:4] == 'rand':
-        algo = hyperopt.rand.suggest
-        PARAMETER_HISTORY_FILE = 'parameter_history_rand_{DATETIME_STAMP}.csv'
+    # ----- Run or Optimize -----
+    if args.evaluations == 1:
+        run_single()
     else:
-        print(f'Unknown algorithm: {algo}')
-        quit()
-
-    # ----- Optimize -----
-    try:
-        # result = evaluation_function(params)
-        # print(f'Result: {result}')
-        result = hyperopt_optimize(
-            evaluation_function, space,
-            algo, args.evaluations, int(args.random_state))
-    except Exception as e:
-        print('Problem encountered during hyperopt_optimize()')
-        print(f"Exception: {e}")
-        quit()
-
-    # ----- Save results -----
-    print('----- Hyperopt Optimization Completed -----')
-    print(f"Result = {result['result']}")
-    save_data(result, trials)
-    df = trials2df(result['result'], result['trials'])
-    df.to_csv(RESULTS_CSV_FILE)
-
-    # ----- Best coefficient of determination -----
-    df.reset_index(drop=True)
-    best_coeff = df['coefficient of determination'].min()
-    idxmin = df['coefficient of determination'].idxmin()
-    print(f"Best coefficient of determination = {best_coeff} (at idx={idxmin})")
-    print(f"Best set of parameters: {df.loc[idxmin, :]}")
+        run_optimize(
+            algo=args.algorithm.lower(),
+            evaluations=args.evaluations,
+            random_state=int(args.random_state)
+        )
