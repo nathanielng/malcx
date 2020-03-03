@@ -20,7 +20,7 @@ DATETIME_STAMP = datetime.datetime.now().strftime('%Y%m%d-%H%Mh')
 RESULT_FILE = os.path.join(ALCX_RUN_FOLDER, f'result-{DATETIME_STAMP}.pkl')
 TRIAL_FILE = os.path.join(ALCX_RUN_FOLDER, f'trials-{DATETIME_STAMP}.pkl')
 RESULTS_CSV_FILE = os.path.join(ALCX_RUN_FOLDER, f'result-{DATETIME_STAMP}.csv')
-PARAMETER_HISTORY_FILE = 'parameter_history_{DATETIME_STAMP}.csv'
+PARAMETER_HISTORY_FILE = f'parameter_history_{DATETIME_STAMP}.csv'
 
 
 # ----- Subroutines -----
