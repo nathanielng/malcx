@@ -82,11 +82,11 @@ def get_search_space(input_nodes, n_columns):
 
     """
     d = {
-        'distribution samples': hyperopt.hp.uniform('distribution', 10, 1000),
+        'distribution samples': hyperopt.hp.choice('distribution', np.arange(10, 1000+1, dtype=int)),
         'gradient directions': hyperopt.hp.uniform('gradient directions', 0, input_nodes - 1),
-        'data for gradient': hyperopt.hp.uniform('data for gradient', 1, 10*input_nodes),
-        'data for intercept': hyperopt.hp.uniform('data for intercept', 1, 10),
-        'iteration layers': hyperopt.hp.uniform('iteration layers', 1, 2),
+        'data for gradient': hyperopt.hp.choice('data for gradient', np.arange(1, 10*input_nodes+1, dtype=int)),
+        'data for intercept': hyperopt.hp.choice('data for intercept', np.arange(1, 10+1, dtype=int)),
+        'iteration layers': hyperopt.hp.choice('iteration layers', np.arange(1, 2+1, dtype=int)),
         'extra data filters': hyperopt.hp.uniform('extra data filters', -1, 1),
         'input nodes': hyperopt.hp.uniform('input nodes', 1, n_columns - 1 ),
         'fraction divisions tried': hyperopt.hp.uniform('fraction divisions tried', 0, 1),
