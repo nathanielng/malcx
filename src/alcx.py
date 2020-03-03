@@ -279,10 +279,10 @@ def run_optimize(algorithm: str, evaluations: int, random_state: int):
     # ----- Define algorithm -----
     if algorithm == 'tpe':
         algo = hyperopt.tpe.suggest
-        PARAMETER_HISTORY_FILE = 'parameter_history_tpe_{DATETIME_STAMP}.csv'
+        PARAMETER_HISTORY_FILE = f'parameter_history_tpe_{DATETIME_STAMP}.csv'
     elif algorithm[:4] == 'rand':
         algo = hyperopt.rand.suggest
-        PARAMETER_HISTORY_FILE = 'parameter_history_rand_{DATETIME_STAMP}.csv'
+        PARAMETER_HISTORY_FILE = f'parameter_history_rand_{DATETIME_STAMP}.csv'
     else:
         print(f'Unknown algorithm: {algo}')
         quit()
