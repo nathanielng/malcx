@@ -86,7 +86,7 @@ def get_search_space(input_nodes, n_columns):
         'gradient directions': hyperopt.hp.uniform('gradient directions', 0, input_nodes - 1),
         'data for gradient': hyperopt.hp.choice('data for gradient', np.arange(1, 10*input_nodes+1, dtype=int)),
         'data for intercept': hyperopt.hp.choice('data for intercept', np.arange(1, 10+1, dtype=int)),
-        'iteration layers': hyperopt.hp.choice('iteration layers', np.arange(1, 2+1, dtype=int)),
+        'iteration layers': hyperopt.hp.choice('iteration layers', np.arange(1, 5+1, dtype=int)),
         'extra data filters': hyperopt.hp.uniform('extra data filters', -1, 1),
         'input nodes': hyperopt.hp.uniform('input nodes', 1, n_columns - 1 ),
         'fraction divisions tried': hyperopt.hp.uniform('fraction divisions tried', 0, 1),
@@ -279,10 +279,10 @@ def run_optimize(algorithm: str, evaluations: int, random_state: int):
     # ----- Define algorithm -----
     if algorithm == 'tpe':
         algo = hyperopt.tpe.suggest
-        PARAMETER_HISTORY_FILE = 'parameter_history_tpe_{DATETIME_STAMP}.csv'
+        PARAMETER_HISTORY_FILE = f'parameter_history_tpe_{DATETIME_STAMP}.csv'
     elif algorithm[:4] == 'rand':
         algo = hyperopt.rand.suggest
-        PARAMETER_HISTORY_FILE = 'parameter_history_rand_{DATETIME_STAMP}.csv'
+        PARAMETER_HISTORY_FILE = f'parameter_history_rand_{DATETIME_STAMP}.csv'
     else:
         print(f'Unknown algorithm: {algo}')
         quit()
@@ -310,8 +310,12 @@ def run_optimize(algorithm: str, evaluations: int, random_state: int):
 
     # ----- Best coefficient of determination -----
     df.reset_index(drop=True)
-    best_coeff = df['coefficient of determination'].min()
-    idxmin = df['coefficient of determination'].idxmin()
+    col = ('results', 'coefficient of determination')
+    if col in df.columns:
+        df = df.sort_values(col, ascending=False)
+
+    best_coeff = df[col].min()
+    idxmin = df[col].idxmin()
     print(f"Best coefficient of determination = {best_coeff} (at idx={idxmin})")
     print(f"Best set of parameters: {df.loc[idxmin, :]}")
 
