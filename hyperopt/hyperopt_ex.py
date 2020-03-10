@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from hyperopt.pyll.stochastic import sample
-
 
 def fn_to_optimize(x):
     return np.poly1d([2, -3, 4])(x)
@@ -52,28 +50,6 @@ def trials2df(result, trials):
         'loss': loss
         }, index = trials.idxs_vals[0]['x'])
     return df
-
-
-def sample_space(space, n):
-    """
-    Samples the space provided
-    """
-    samples = []
-    for _ in range(n):
-        samples.append(sample(space))
-    return samples
-
-
-def plot_sample_space_1D(samples, filename=None):
-    """
-    Plots the samples
-    """
-    fig, ax = plt.subplots(1, 1, figsize=(7,5))
-    ax.hist(samples, bins=20, edgecolor='black')
-    ax.set_xlabel('x')
-    ax.set_ylabel('Frequency')
-    if isinstance(filename, str):
-        plt.savefig(filename)
 
 
 if __name__ == "__main__":
