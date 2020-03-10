@@ -86,7 +86,7 @@ def get_search_space(input_nodes, n_columns):
         'gradient directions': hyperopt.hp.uniform('gradient directions', 0, input_nodes - 1),
         'data for gradient': hyperopt.hp.choice('data for gradient', np.arange(1, 10*input_nodes+1, dtype=int)),
         'data for intercept': hyperopt.hp.choice('data for intercept', np.arange(1, 10+1, dtype=int)),
-        'iteration layers': hyperopt.hp.choice('iteration layers', np.arange(1, 2+1, dtype=int)),
+        'iteration layers': hyperopt.hp.choice('iteration layers', np.arange(1, 5+1, dtype=int)),
         'extra data filters': hyperopt.hp.uniform('extra data filters', -1, 1),
         'input nodes': hyperopt.hp.uniform('input nodes', 1, n_columns - 1 ),
         'fraction divisions tried': hyperopt.hp.uniform('fraction divisions tried', 0, 1),
@@ -305,15 +305,22 @@ def run_optimize(algorithm: str, evaluations: int, random_state: int):
     print('----- Hyperopt Optimization Completed -----')
     print(f"Result = {result['result']}")
     save_data(result['result'], result['trials'])
-    df = trials2df(result['result'], result['trials'])
-    df.to_csv(RESULTS_CSV_FILE)
+    df_results = trials2df(result['result'], result['trials'])
+    df_results.to_csv(RESULTS_CSV_FILE)
 
     # ----- Best coefficient of determination -----
-    df.reset_index(drop=True)
-    best_coeff = df['coefficient of determination'].min()
-    idxmin = df['coefficient of determination'].idxmin()
-    print(f"Best coefficient of determination = {best_coeff} (at idx={idxmin})")
-    print(f"Best set of parameters: {df.loc[idxmin, :]}")
+    df_results.reset_index(drop=True, inplace=True)
+    col = 'loss'
+    if col in df_results.columns:
+        df_results = df_results.sort_values(col, ascending=False)
+
+    min_coeff = df_results[col].min()
+    idxmin = df_results[col].idxmin()
+    print(f"Minimum coefficient of determination = {min_coeff} (at idx={idxmin})")
+    max_coeff = df_results[col].max()
+    idxmax = df_results[col].idxmax()
+    print(f"Maximum coefficient of determination = {max_coeff} (at idx={idxmax})")
+    print(f"Best set of parameters: {df_results.loc[idxmax, :]}")
 
 
 evaluation_function.ITERATION = 0
@@ -337,7 +344,9 @@ if __name__ == "__main__":
         quit()
 
     # ----- Specify output / logging file -----
+    alcx_algo = args.algorithm.lower()
     ALCX_OUTPUTLOG = os.path.join(ALCX_RUN_FOLDER, f'alcx-{DATETIME_STAMP}.out')
+    PARAMETER_HISTORY_FILE = f'parameter_history_{alcx_algo}_{DATETIME_STAMP}.csv'
 
     # ----- Specify input file -----
     ALCX_JSONFILE = os.path.join(ALCX_RUN_FOLDER, 'input.json')
@@ -356,7 +365,7 @@ if __name__ == "__main__":
         run_single()
     else:
         run_optimize(
-            algorithm=args.algorithm.lower(),
+            algorithm=alcx_algo,
             evaluations=args.evaluations,
             random_state=int(args.random_state)
         )
