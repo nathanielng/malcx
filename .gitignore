@@ -1,3 +1,6 @@
 __pycache__
-hyperopt/hyperopt.png
+.ipynb_checkpoints
+.pytest_cache
 
+hyperopt/hp_histogram.png
+hyperopt/hyperopt.png
