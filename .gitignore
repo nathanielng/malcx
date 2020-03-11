@@ -1,6 +1,10 @@
 __pycache__
+.ipynb_checkpoints
+.pytest_cache
 
+alcx_*.out
+
+hyperopt/hp_histogram.png
 hyperopt/hyperopt.png
 src/images/*.png
-alcx_*.out
 
