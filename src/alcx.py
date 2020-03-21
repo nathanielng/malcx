@@ -343,10 +343,16 @@ if __name__ == "__main__":
         print('need to be defined.')
         quit()
 
+    print(f'Executable: {ALCX_EXECUTABLE}')
+    print(f'Run folder: {ALCX_RUN_FOLDER}')
+
     # ----- Specify output / logging file -----
     alcx_algo = args.algorithm.lower()
     ALCX_OUTPUTLOG = os.path.join(ALCX_RUN_FOLDER, f'alcx-{DATETIME_STAMP}.out')
     PARAMETER_HISTORY_FILE = f'parameter_history_{alcx_algo}_{DATETIME_STAMP}.csv'
+    print(f'Algorithm: {alcx_algo}')
+    print(f'Output log: {ALCX_OUTPUTLOG}')
+    print(f'Parameter history file: {PARAMETER_HISTORY_FILE}')
 
     # ----- Specify input file -----
     ALCX_JSONFILE = os.path.join(ALCX_RUN_FOLDER, 'input.json')
