@@ -12,11 +12,8 @@ import matplotlib
 matplotlib.use('module://drawilleplot')
 
 from alcx_plot import add_timestamps, summarize_historyfile
+from alcx_reader import find_file_by_index, RUN_FOLDER
 from matplotlib import pyplot as plt
-
-
-RUN_FOLDER = os.getenv('RUN_FOLDER', '../../run/')
-RUN_FOLDER = os.path.abspath(RUN_FOLDER)
 
 
 def draw_plot(ax, x, y, label, xlabel=None, ylabel=None, title=None):
@@ -29,19 +26,6 @@ def draw_plot(ax, x, y, label, xlabel=None, ylabel=None, title=None):
         ax.set_ylabel(ylabel)
     ax.axis([x.min(), x.max(), y.min(), y.max()])
     ax.legend(loc='best')
-
-
-def find_file_by_index(idx):
-    """
-    Find file (of the form `parameter_history*.csv`) by index
-    where 0 = first file,
-          1 = second file,
-         -2 = second last file
-         -1 = last file
-    """
-    files = glob.glob(f'{RUN_FOLDER}/parameter_history*.csv')
-    file_list = add_timestamps(files)
-    return file_list.iloc[idx].loc['Filename']
 
 
 def process_history_file(filename):

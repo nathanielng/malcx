@@ -4,33 +4,22 @@
 # Postprocessing subroutines
 
 import argparse
-import datetime
 import glob
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
-import re
 
-from alcx_reader import read_parameter_history_file, remove_first_row_header
+
+from alcx_reader import add_timestamps, read_parameter_history_file, remove_first_row_header
 from matplotlib.cm import get_cmap
 from pandas.plotting import scatter_matrix
 
-RUN_FOLDER = os.path.abspath('../../run/')
+ALCX_RUN_FOLDER = os.getenv('ALCX_RUN_FOLDER', os.path.abspath('../../run/'))
 
 
 def print_params(s):
     for param, value in s.iteritems():
         print(f'       {param}: {value}')
-
-
-def add_timestamps(filenames, fmt=r'parameter_history_.*([0-9]{8}-[0-9]{4})h.csv'):
-    file_list = []
-    for filename in filenames:
-        m = re.search(fmt, filename)
-        if m is not None:
-            ts = datetime.datetime.strptime(m.group(1), '%Y%m%d-%H%M')
-            file_list.append([filename, ts])
-    return pd.DataFrame(file_list, columns=['Filename', 'Date']).sort_values('Date')
 
 
 def summarize_historyfile(filename):
@@ -54,7 +43,10 @@ def summarize_historyfile(filename):
     print(f'(n={len(df)})')
     print(f"   - Best coefficient of determination = {best_coeff} (at idx={idxmax})")
     print(f"   - Best set of parameters:")
-    print_params(df.loc[idxmax, :].T)
+    df_slice = df.loc[idxmax, :]
+    print_params(df_slice.T)
+    d = df_row_to_dict(df_slice)
+
     return df
 
 
@@ -109,15 +101,17 @@ def load_history_files(folder, refresh):
     for i, file in enumerate(files):
         basename = os.path.basename(file)
         img_file, _ = os.path.splitext(basename)
-        img_file1 = f'images/{img_file}_histogram.png'
-        img_file2 = f'images/{img_file}_history.png'
+        img_file1 = f'../images/{img_file}_histogram.png'
+        img_file2 = f'../images/{img_file}_history.png'
         print(f'{i}: {basename} ', end='')
         df = summarize_historyfile(file)
 
         if refresh is False and os.path.isfile(img_file1):
             continue
         plot_parameter_histograms(df, img_file1)
+        print(f'Plotted: {img_file1}')
         plot_parameter_history(df, img_file2)
+        print(f'Plotted: {img_file1}')
 
 
 if __name__ == "__main__":
@@ -129,4 +123,4 @@ if __name__ == "__main__":
     if args.history is not None:
         load_history_files(args.history, args.refresh)
     else:
-        load_history_files(RUN_FOLDER, args.refresh)
+        load_history_files(ALCX_RUN_FOLDER, args.refresh)
