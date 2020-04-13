@@ -1,0 +1,26 @@
+{
+ "tasks": {
+  "task list": "time train predict"
+ },
+ "network": {
+  "distribution samples": 50,
+  "gradient directions": 18,
+  "data for gradient": 70,
+  "data for intercept": 1,
+  "data in gradient": 70,
+  "data in intercept": 1,
+  "iteration layers": 5,
+  "extra data filters": 0.3,
+  "full probability distribution": 1
+ },
+ "training": {
+  "descriptor columns": 287,
+  "input nodes": 52,
+  "fraction divisions tried": 0.3,
+  "minimum input node correlation": 0.04,
+  "maximum input node intercorrelation": 0.93
+ },
+ "data": {
+  "model compression": 1
+ }
+}
