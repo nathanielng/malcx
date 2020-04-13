@@ -1,0 +1,25 @@
+{
+ "tasks": {
+  "task list": "time train impute validate"
+ },
+ "network": {
+  "distribution samples": 961,
+  "gradient directions": 20,
+  "data for gradient": 40,
+  "data for intercept": 3,
+  "data in gradient": 70,
+  "data in intercept": 1,
+  "iteration layers": 2,
+  "extra data filters": 0.0261478080412432
+ },
+ "training": {
+  "descriptor columns": 287,
+  "input nodes": 73,
+  "fraction divisions tried": 0.35165262681764003,
+  "minimum input node correlation": 0.8403085498235582,
+  "maximum input node intercorrelation": 0.29548138718919464
+ },
+ "data": {
+  "model compression": 1
+ }
+}
